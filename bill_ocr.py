@@ -74,14 +74,19 @@ result_dict = {}
 # Loop through input list
 for item in lines:
     # Search for pattern in item
-    match = re.search(pattern, item)
-    if match:
-        text = match.group(1)
-        number = float(match.group(2))
-        if isinstance(number, int):
-            print(number)
-            number = number/100
-        result_dict[text] = number
+    try:
+        match = re.search(pattern, item)
+        if match:
+            text = match.group(1)
+            if "." in match.group(2):
+                # If the string contains a dot, it's a float
+                number = float(match.group(2))
+            else:
+                # If the string doesn't contain a dot, it's an integer
+                number = int(match.group(2))/100
+            result_dict[text] = number
+    except Exception:
+        pass
 
 # Print the resulting dictionary
 print(result_dict)
