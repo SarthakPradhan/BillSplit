@@ -67,7 +67,8 @@ def process_image(image):
 
     # Return the resulting dictionary
     print(result_dict)
-    result_dict = pd.DataFrame(list(result_dict.items()),columns=['Item', 'Price'])
+    result_dict = pd.DataFrame(list(result_dict.items()), columns=['Item', 'Price'])
+    result_dict['copy_index'] = result_dict.index
     print(result_dict)
     return result_dict
 
@@ -94,42 +95,78 @@ def main():
 
     def open_bill_split_window():
         global bill_elements
-        #print(bill_elements)
+        # print(bill_elements)
 
         no_users = int(combobox.get())
 
         global each_user_items
         each_user_items = []
         for j in range(no_users):
-            each_user_items.append(pd.DataFrame(columns=['Item', 'Price']))
+            each_user_items.append(pd.DataFrame(columns=['Item', 'Price', 'copy_index']))
 
+        '''All GUI elements of bill split window start'''
         page2_window = Toplevel(root)
         # Parts List (Listbox)
-        elements_list = Listbox(page2_window, border=3)
-        for index, row in bill_elements.iterrows():
 
-            elements_list.insert(index, str(row["Item"])+"-$"+str(row["Price"]))
+        def update_bill_gui():
+            global bill_elements
+            bill_elements_list_box.delete(0, END)
+            for index, row in bill_elements.iterrows():
+                bill_elements_list_box.insert(index, str(index) + ") " + str(row["Item"]) + "-$" + str(row["Price"]))
+        def update_user_bill_gui():
+            global each_user_items
+            for j in range(no_users):
+                each_user_items_listbox[j].delete(0, END)
+                for index, row in each_user_items[j].iterrows():
+                    each_user_items_listbox[j].insert(END, str(row["Item"]) + "-$" + str(row["Price"]))
+                each_user_items_label_total[j]["text"] = "Total $" + str(sum(each_user_items[j]["Price"].values))
 
-        elements_list.pack()
+        bill_elements_list_box = Listbox(page2_window, border=3)
+        update_bill_gui()
+        bill_elements_list_box.pack()
 
-        items_list = [None] * no_users
-        for i in range(no_users):
-            items_list[i] = Listbox(page2_window, border=1)
-            # parts_list.grid(row=3, column=0, columnspan=3, rowspan=6, pady=20, padx=20)
-            items_list[i].pack()
-        page2_window.title("Page 2")
-        page2_window.geometry('1400x700')
-
-        def on_listbox_select(event):
+        def on_main_listbox_select(event):
             # Function to handle Listbox selection
             show_checkboxes()
 
-        elements_list.bind("<<ListboxSelect>>", on_listbox_select)
+        def on_user_listbox_select(event):
+            global each_user_items
+
+            # Function to handle Listbox selection
+            index = event.widget.curselection()[0]
+            item = event.widget.get(index)
+            print(index)
+            print(int(str(event.widget)[-1]) - 2)
+            index_df = int(str(event.widget)[-1]) - 2  # index of the list of user dataframes
+            org_index = each_user_items[index_df].iloc[[index]]["copy_index"].values[0]
+            print('org_index', org_index)
+            for j in range(len(each_user_items)):
+                each_user_items[j] = each_user_items[j][each_user_items[j]["copy_index"] != org_index]
+            update_user_bill_gui()
+            update_bill_gui()
+
+
+
+
+        bill_elements_list_box.bind("<<ListboxSelect>>", on_main_listbox_select)
+
+        each_user_items_listbox = [None] * no_users
+        each_user_items_label_total = [None] * no_users
+        for i in range(no_users):
+            each_user_items_listbox[i] = Listbox(page2_window, border=1)
+            each_user_items_listbox[i].bind("<<ListboxSelect>>", on_user_listbox_select)
+            each_user_items_label_total[i] = Label(page2_window, text="$")
+            # parts_list.grid(row=3, column=0, columnspan=3, rowspan=6, pady=20, padx=20)
+            each_user_items_listbox[i].pack(padx=5, pady=15, side=LEFT)
+            each_user_items_label_total[i].place(in_=each_user_items_listbox[i], relx=0, x=0, rely=1)
+        page2_window.title("Page 2")
+        page2_window.geometry('1000x500')
+        '''All GUI elements of bill split window end'''
 
         def show_checkboxes():
-            selected_list_index = elements_list.curselection()
+            selected_list_index = bill_elements_list_box.curselection()
 
-            selected_list_element = elements_list.get(selected_list_index)
+            selected_list_element = bill_elements_list_box.get(selected_list_index)
             print(selected_list_element)
             print(selected_list_index)
             # Create four checkboxes
@@ -158,20 +195,31 @@ def main():
                 # Show messagebox with selected checkboxes' values
                 global each_user_items
                 for i in selected_checkboxes:
+                    each_user_items[i] = each_user_items[i].append(
+                        {'Item': bill_elements.loc[[selected_list_index[0]]]["Item"].values[0],
+                         'Price': bill_elements.loc[[selected_list_index[0]]]["Price"].values[0] / len(
+                             selected_checkboxes),
+                         'copy_index': bill_elements.loc[[selected_list_index[0]]]["copy_index"].values[0]},
+                        ignore_index=True)
 
-                    each_user_items[i] = each_user_items[i].append({'Item': bill_elements.loc[[selected_list_index[0]]]["Item"].values,'Price': bill_elements.loc[[selected_list_index[0]]]["Price"].values/len(selected_checkboxes)},ignore_index=True)
+                    # each_user_items_listbox[i].insert(END, str(
+                    #     bill_elements.loc[[selected_list_index[0]]]["Item"].values[0]) + "-$" + str(
+                    #     bill_elements.loc[[selected_list_index[0]]]["Price"].values[0] / len(selected_checkboxes)))
+
+
+                update_user_bill_gui()
 
                 print(selected_checkboxes)
                 print("0 frame")
                 print(each_user_items[0])
                 print("1 frame")
-                print(each_user_items[0])
+                print(each_user_items[1])
                 checkbox_window.destroy()
 
             submit_button = Button(checkbox_window, text="Submit", command=submit)
             submit_button.pack()
 
-        page2_label = Label(page2_window, text="Page 2")
+        page2_label = Label(page2_window, text="Bill Split")
         page2_label.pack()
         page2_btn = Button(page2_window, text="Back", command=page2_window.destroy)
         page2_btn.pack()
