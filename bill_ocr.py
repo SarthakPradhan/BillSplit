@@ -69,6 +69,7 @@ def process_image(image):
     print(result_dict)
     result_dict = pd.DataFrame(list(result_dict.items()), columns=['Item', 'Price'])
     result_dict['copy_index'] = result_dict.index
+    result_dict['state'] = False
     print(result_dict)
     return result_dict
 
@@ -106,13 +107,20 @@ def main():
 
         '''All GUI elements of bill split window start'''
         page2_window = Toplevel(root)
+
         # Parts List (Listbox)
 
         def update_bill_gui():
             global bill_elements
             bill_elements_list_box.delete(0, END)
+
             for index, row in bill_elements.iterrows():
-                bill_elements_list_box.insert(index, str(index) + ") " + str(row["Item"]) + "-$" + str(row["Price"]))
+
+                bill_elements_list_box.insert(int(row["copy_index"]), str(index) + ") " + str(row["Item"]) + "-$" + str(row["Price"]))
+                if row["state"] == True:
+                    bill_elements_list_box.itemconfig(END , fg='gray')
+                    pass
+
         def update_user_bill_gui():
             global each_user_items
             for j in range(no_users):
@@ -127,7 +135,9 @@ def main():
 
         def on_main_listbox_select(event):
             # Function to handle Listbox selection
-            show_checkboxes()
+
+            if bill_elements.loc[[bill_elements_list_box.curselection()[0]]]['state'].values == False:
+                show_checkboxes()
 
         def on_user_listbox_select(event):
             global each_user_items
@@ -142,11 +152,9 @@ def main():
             print('org_index', org_index)
             for j in range(len(each_user_items)):
                 each_user_items[j] = each_user_items[j][each_user_items[j]["copy_index"] != org_index]
+            bill_elements.loc[[org_index], ['state']] = False
             update_user_bill_gui()
             update_bill_gui()
-
-
-
 
         bill_elements_list_box.bind("<<ListboxSelect>>", on_main_listbox_select)
 
@@ -202,13 +210,10 @@ def main():
                          'copy_index': bill_elements.loc[[selected_list_index[0]]]["copy_index"].values[0]},
                         ignore_index=True)
 
-                    # each_user_items_listbox[i].insert(END, str(
-                    #     bill_elements.loc[[selected_list_index[0]]]["Item"].values[0]) + "-$" + str(
-                    #     bill_elements.loc[[selected_list_index[0]]]["Price"].values[0] / len(selected_checkboxes)))
-
-
                 update_user_bill_gui()
-
+                bill_elements.loc[[selected_list_index[0]],['state']] = True
+                print("update df", bill_elements)
+                update_bill_gui()
                 print(selected_checkboxes)
                 print("0 frame")
                 print(each_user_items[0])
