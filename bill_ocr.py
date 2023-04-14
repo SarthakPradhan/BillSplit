@@ -80,7 +80,7 @@ def main():
     root.title("Bill Split root")
     root.geometry('700x350')
 
-    bill_elements = {}
+    bill_elements = pd.DataFrame()
     each_user_items = []
 
     def open_image():
@@ -94,8 +94,15 @@ def main():
             global bill_elements
             bill_elements = result_dict
 
+    def close_new_window(window):
+        # Function to close the new window and show the main window
+        window.destroy()
+        root.deiconify()  # Show the main window
+
     def open_bill_split_window():
+        root.withdraw()
         global bill_elements
+        bill_elements['state'] = False
         # print(bill_elements)
 
         no_users = int(combobox.get())
@@ -116,9 +123,10 @@ def main():
 
             for index, row in bill_elements.iterrows():
 
-                bill_elements_list_box.insert(int(row["copy_index"]), str(index) + ") " + str(row["Item"]) + "-$" + str(row["Price"]))
+                bill_elements_list_box.insert(int(row["copy_index"]),
+                                              str(index) + ") " + str(row["Item"]) + "-$" + str(row["Price"]))
                 if row["state"] == True:
-                    bill_elements_list_box.itemconfig(END , fg='gray')
+                    bill_elements_list_box.itemconfig(END, fg='gray')
                     pass
 
         def update_user_bill_gui():
@@ -135,9 +143,11 @@ def main():
 
         def on_main_listbox_select(event):
             # Function to handle Listbox selection
-
-            if bill_elements.loc[[bill_elements_list_box.curselection()[0]]]['state'].values == False:
-                show_checkboxes()
+            try:
+                if bill_elements.loc[[bill_elements_list_box.curselection()[0]]]['state'].values == False:
+                    show_checkboxes()
+            except:
+                pass
 
         def on_user_listbox_select(event):
             global each_user_items
@@ -167,7 +177,7 @@ def main():
             # parts_list.grid(row=3, column=0, columnspan=3, rowspan=6, pady=20, padx=20)
             each_user_items_listbox[i].pack(padx=5, pady=15, side=LEFT)
             each_user_items_label_total[i].place(in_=each_user_items_listbox[i], relx=0, x=0, rely=1)
-        page2_window.title("Page 2")
+        page2_window.title("Split Bill among users")
         page2_window.geometry('1000x500')
         '''All GUI elements of bill split window end'''
 
@@ -211,7 +221,7 @@ def main():
                         ignore_index=True)
 
                 update_user_bill_gui()
-                bill_elements.loc[[selected_list_index[0]],['state']] = True
+                bill_elements.loc[[selected_list_index[0]], ['state']] = True
                 print("update df", bill_elements)
                 update_bill_gui()
                 print(selected_checkboxes)
@@ -226,7 +236,7 @@ def main():
 
         page2_label = Label(page2_window, text="Bill Split")
         page2_label.pack()
-        page2_btn = Button(page2_window, text="Back", command=page2_window.destroy)
+        page2_btn = Button(page2_window, text="Back", command=lambda: close_new_window(page2_window))
         page2_btn.pack()
 
     # Create UI elements for root window
