@@ -3,15 +3,10 @@ Author: Sarthak Pradhan
 Date: 04/04/2023
 Description: function to scan and bill and create elements that can be put into buckets for the convenience of splitting
 """
-import argparse
-import cv2
-import numpy as np
-import pytesseract
-import nltk
-import imutils
-from imutils.perspective import four_point_transform
 import re
-from nltk import word_tokenize, pos_tag, ne_chunk
+
+import cv2
+import pytesseract
 
 # Load the Tesseract OCR engine
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Replace with the path to your Tesseract OCR executable
