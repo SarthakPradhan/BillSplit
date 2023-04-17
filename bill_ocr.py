@@ -3,23 +3,17 @@ Author: Sarthak Pradhan
 Date: 04/04/2023
 Description: function to scan and bill and create elements that can be put into buckets for the convenience of splitting
 """
-import argparse
-from tkinter.ttk import Combobox
-import pandas as pd
-import cv2
-import numpy as np
-import pytesseract
-import uuid
-import nltk
-import imutils
-from imutils.perspective import four_point_transform
 import re
-from nltk import word_tokenize, pos_tag, ne_chunk
 from tkinter import *
-from tkinter import messagebox, filedialog
+from tkinter import filedialog
+from tkinter.ttk import Combobox
+
+import cv2
+import pandas as pd
+import pytesseract
 
 # Load the Tesseract OCR engine
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Replace with the path to your Tesseract OCR executable
+pytesseract.pytesseract.tesseract_cmd = r"Tesseract-OCR\tesseract.exe"  # path to Tesseract OCR executable
 
 
 def process_image(image):
@@ -114,8 +108,8 @@ def main():
 
         '''All GUI elements of bill split window start'''
         page2_window = Toplevel(root)
-
-        # Parts List (Listbox)
+        # close window and reopen main window when cross button is clicked
+        page2_window.protocol('WM_DELETE_WINDOW', lambda: close_new_window(page2_window))
 
         def update_bill_gui():
             global bill_elements
@@ -139,7 +133,7 @@ def main():
 
         bill_elements_list_box = Listbox(page2_window, border=3)
         update_bill_gui()
-        bill_elements_list_box.pack()
+        bill_elements_list_box.place(relheight=0.3, relwidth=0.3)
 
         def on_main_listbox_select(event):
             # Function to handle Listbox selection
@@ -202,10 +196,10 @@ def main():
 
             def submit():
                 global bill_elements
-                print(bill_elements)
+                #print(bill_elements)
                 # Function to retrieve selected checkboxes' values
                 selected_checkboxes = []
-                print(bill_elements.loc[[selected_list_index[0]]])
+                #print(bill_elements.loc[[selected_list_index[0]]])
                 for i in range(no_users):
                     if chk_var[i].get() == 1:
                         selected_checkboxes.append(i)
@@ -213,12 +207,21 @@ def main():
                 # Show messagebox with selected checkboxes' values
                 global each_user_items
                 for i in selected_checkboxes:
-                    each_user_items[i] = each_user_items[i].append(
-                        {'Item': bill_elements.loc[[selected_list_index[0]]]["Item"].values[0],
-                         'Price': bill_elements.loc[[selected_list_index[0]]]["Price"].values[0] / len(
+
+
+
+                    each_user_items[i] = pd.concat([each_user_items[i],
+
+                                                    pd.DataFrame([[bill_elements.loc[[selected_list_index[0]]]["Item"].values[0],
+                                  bill_elements.loc[[selected_list_index[0]]]["Price"].values[0] / len(
                              selected_checkboxes),
-                         'copy_index': bill_elements.loc[[selected_list_index[0]]]["copy_index"].values[0]},
-                        ignore_index=True)
+                             bill_elements.loc[[selected_list_index[0]]]["copy_index"].values[0]
+                             ]],columns=['Item', 'Price', 'copy_index'])
+
+                                                    ],ignore_index=True)
+
+
+
 
                 update_user_bill_gui()
                 bill_elements.loc[[selected_list_index[0]], ['state']] = True
